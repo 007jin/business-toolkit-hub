@@ -40,8 +40,7 @@ export default async function ToolPage({
 }: {
   params: { tool: string };
 }) {
-  const toolKey = "profit-margin-calculator";
-  //const toolKey = typeof params.tool === "string" ? params.tool.trim() : "";//
+  const toolKey = typeof params.tool === "string" ? params.tool.trim() : "";
   const tool = tools[toolKey as keyof typeof tools];
 
   if (!tool) {
@@ -49,9 +48,6 @@ export default async function ToolPage({
       <main className="bg-gray-100 min-h-screen py-10 px-4">
         <div className="max-w-3xl mx-auto p-10 text-center">
           <p className="text-xl">Tool not found</p>
-          <p className="mt-2 text-sm text-gray-500">
-            Debug: toolKey =&quot;{toolKey}&quot;
-          </p>
         </div>
       </main>
     );
@@ -178,7 +174,7 @@ export default async function ToolPage({
               .slice(0, 5)
               .map(([key, t]) => (
                 <li key={key}>
-                  <a href={`/tools/${key}`}>{tool.title}</a>
+                  <a href={`/tools/${key}`}>{t.title}</a>
                 </li>
               ))}
           </ul>
