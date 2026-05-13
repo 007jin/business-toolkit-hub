@@ -40,16 +40,21 @@ export default async function ToolPage({
 }: {
   params: { tool: string };
 }) {
-  const { tool: toolKey } = params;
-  const tool = tools[toolKey as keyof typeof tools];
+const { tool: toolKey } = params;
+const tool = tools[toolKey as keyof typeof tools];
 
-  if (!tool) {
-    return (
-      <div className="p-10 text-center text-xl">
-        Tool not found
+if (!tool) {
+  return (
+    <main className="bg-gray-100 min-h-screen py-10 px-4">
+      <div className="max-w-3xl mx-auto p-10 text-center">
+        <p className="text-xl">Tool not found</p>
+        <p className="mt-2 text-sm text-gray-500">
+          Debug: toolKey =&quot;{toolKey}&quot;
+        </p>
       </div>
-    );
-  }
+    </main>
+  );
+}
 
   return (
     <main className="bg-gray-100 min-h-screen py-10 px-4">
