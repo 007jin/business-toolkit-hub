@@ -168,13 +168,11 @@ export default async function ToolPage({
 
           <ul className="list-disc ml-6 text-blue-600 space-y-2">
             {Object.entries(tools)
-              .filter(([key]) => key !== params.tool)
+              .filter(([key]) => key !== toolKey)
               .slice(0, 5)
               .map(([key, t]) => (
                 <li key={key}>
-                  <a href={`/tools/${key}`}>
-                    {t.title}
-                  </a>
+                  <a href={`/tools/${key}`}>{tool.title}</a>
                 </li>
               ))}
           </ul>
