@@ -1,28 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import ToolLinks from "./ToolLinks";
 
-type Field = {
+export type Field = {
   name: string;
   placeholder: string;
   type?: "number" | "text";
 };
 
+export type CalculatorType =
+  | "profitMargin"
+  | "startupCost"
+  | "breakEven"
+  | "pricingMarkup"
+  | "roi"
+  | "hourlyRate"
+  | "hookGenerator"
+  | "nameGenerator"
+  | "sloganGenerator"
+  | "ctaGenerator";
+
 type Props = {
   title: string;
-  fields: Field[];
-  type:
-    | "profitMargin"
-    | "startupCost"
-    | "breakEven"
-    | "pricingMarkup"
-    | "roi"
-    | "hourlyRate"
-    | "hookGenerator"
-    | "nameGenerator"
-    | "sloganGenerator"
-    | "ctaGenerator";
+  fields: readonly Field[];
+  type: CalculatorType;
 };
 
 export default function Calculator({ title, fields, type }: Props) {

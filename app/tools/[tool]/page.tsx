@@ -1,12 +1,12 @@
 import { tools } from "@/app/lib/tools";
-import Calculator from "@/app/components/Calculator";
+import Calculator, { type CalculatorType } from "@/app/components/Calculator";
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ tool: string }>;
+  params: { tool: string };
 }) {
-  const { tool: toolKey } = await params;
+  const { tool: toolKey } = params;
 
   const tool = tools[toolKey as keyof typeof tools];
 
@@ -38,10 +38,9 @@ export async function generateMetadata({
 export default async function ToolPage({
   params,
 }: {
-  params: Promise<{ tool: string }>;
+  params: { tool: string };
 }) {
-  const { tool: toolKey } = await params;
-
+  const { tool: toolKey } = params;
   const tool = tools[toolKey as keyof typeof tools];
 
   if (!tool) {
@@ -71,7 +70,7 @@ export default async function ToolPage({
         <section>
           <Calculator
             title={tool.title}
-            type={tool.type}
+            type={tool.type as CalculatorType}
             fields={tool.fields}
           />
         </section>
@@ -84,6 +83,7 @@ export default async function ToolPage({
           <div className="flex flex-wrap gap-3">
             {Object.entries(tools)
               .filter(([key]) => key !== toolKey)
+              .slice(0, 5)
               .map(([key, t]) => (
                 <a
                   key={key}
