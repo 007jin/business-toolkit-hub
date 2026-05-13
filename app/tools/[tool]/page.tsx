@@ -6,8 +6,9 @@ export async function generateMetadata({
 }: {
   params: { tool: string };
 }) {
-  const { tool: toolKey } = params;
+  //const { tool: toolKey } = params;//
 
+  const toolKey = "profit-margin-calculator";
   const tool = tools[toolKey as keyof typeof tools];
 
   if (!tool) {
