@@ -48,6 +48,9 @@ export default async function ToolPage({
       <main className="bg-gray-100 min-h-screen py-10 px-4">
         <div className="max-w-3xl mx-auto p-10 text-center">
           <p className="text-xl">Tool not found</p>
+          <p className="mt-2 text-sm text-gray-500">
+          toolKey =&quot;{toolKey}&quot;
+        </p>
         </div>
       </main>
     );
