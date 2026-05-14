@@ -1,4 +1,7 @@
 import "./globals.css";
+import Image from "next/image";
+import Link from "next/link";
+import { Inter } from "next/font/google";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -23,6 +26,10 @@ export const metadata: Metadata = {
   },
 };
 
+const inter = Inter({
+  subsets: ["latin"],
+});
+
 export default function RootLayout({
   children,
 }: {
@@ -30,39 +37,54 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-gray-100 text-black">
+      <body className={ inter.className + " bg-gray-100 text-black" }>
 
         {/* NAVBAR */}
-        <header className="bg-white shadow-sm border-b">
-          <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        <header className="bg-white border-b border-gray-200">
 
-            <a
-              href="/"
-              className="text-2xl font-bold"
-            >
-            <span className="text-[var(--color-primary)] font-bold">
-            Business Toolkit Hub
-            </span>
-            </a>
+  <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 
-            <nav className="flex gap-6 text-lg">
-              <a href="/" className="hover:text-gray-600">
-                Home
-              </a>
+    {/* LOGO */}
+    <Link href="/" className="flex items-center">
+      <Image
+        src="/logo.png"
+        alt="Business Toolkit Hub"
+        width={220}
+        height={66}
+        priority
+        className="h-auto w-auto max-h-16"
+      />
+    </Link>
 
-              <a href="/tools" className="hover:text-gray-600">
-                Tools
-              </a>
-            </nav>
-          </div>
-        </header>
+    {/* NAV */}
+    <nav className="flex gap-6 text-[var(--color-text)] font-medium">
+
+      <Link
+        href="/"
+        className="hover:text-[var(--color-primary)] transition"
+      >
+        Home
+      </Link>
+
+      <Link
+        href="/tools"
+        className="hover:text-[var(--color-primary)] transition"
+      >
+        Tools
+      </Link>
+
+    </nav>
+
+  </div>
+
+</header>
 
         {/* PAGE CONTENT */}
         <main>{children}</main>
 
         {/* FOOTER */}
         <footer className="border-t bg-white mt-20">
-          <div className="text-[var(--color-subtext)]">
+          <div className="text-[var(--color-subtext)] flex items-center justify-center text-center py-4">
             © 2026 Business Toolkit Hub. All rights reserved.
           </div>
         </footer>

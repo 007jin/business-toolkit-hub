@@ -64,13 +64,22 @@ export default function Calculator({
     // ======================
 
     if (type === "profitMargin") {
-      if (v.revenue <= 0) {
-        setResult(0);
+      // 1. Force numeric values
+      const revenue = Number(v.revenue);
+      const cost = Number(v.cost);
+
+      // 2. Basic validation
+      if (!Number.isFinite(revenue) || !Number.isFinite(cost) || revenue <= 0) {
+        setResult("0");
         return;
       }
 
-      const profit = v.revenue - v.cost;
-      res = (profit / v.revenue) * 100;
+      // 3. Compute margin in percent
+      const profit = revenue - cost;
+      const marginPercent = (profit / revenue) * 100;
+
+      // 4. Format with percent sign
+      setResult(marginPercent);
     }
 
     if (type === "startupCost") {

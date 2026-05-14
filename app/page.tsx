@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { tools } from "@/app/lib/tools";
 
+
 const featuredTools = [
   "profit-margin-calculator",
   "startup-cost-calculator",
