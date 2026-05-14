@@ -26,13 +26,20 @@ type Props = {
   type: CalculatorType;
 };
 
-export default function Calculator({ title, fields, type }: Props) {
+export default function Calculator({
+  title,
+  fields,
+  type,
+}: Props) {
   const [values, setValues] = useState<Record<string, string>>({});
   const [result, setResult] = useState<number | string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
 
   const handleChange = (name: string, value: string) => {
-    setValues((prev) => ({ ...prev, [name]: value }));
+    setValues((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const pushToHistory = (value: string) => {
@@ -52,11 +59,16 @@ export default function Calculator({ title, fields, type }: Props) {
 
     let res: number | string = 0;
 
-    // =========================
+    // ======================
     // CALCULATORS
-    // =========================
+    // ======================
 
     if (type === "profitMargin") {
+      if (v.revenue <= 0) {
+        setResult(0);
+        return;
+      }
+
       const profit = v.revenue - v.cost;
       res = (profit / v.revenue) * 100;
     }
@@ -66,26 +78,40 @@ export default function Calculator({ title, fields, type }: Props) {
     }
 
     if (type === "breakEven") {
-      const contribution = v.pricePerUnit - v.variableCost;
+      const contribution =
+        v.pricePerUnit - v.variableCost;
+
       if (contribution <= 0) {
         setResult(0);
         return;
       }
+
       res = v.fixedCost / contribution;
     }
 
     if (type === "pricingMarkup") {
-      res = ((v.sellingPrice - v.cost) / v.cost) * 100;
+      if (v.cost <= 0) {
+        setResult(0);
+        return;
+      }
+
+      res =
+        ((v.sellingPrice - v.cost) / v.cost) * 100;
     }
 
     if (type === "roi") {
+      if (v.investment <= 0) {
+        setResult(0);
+        return;
+      }
+
       res = (v.profit / v.investment) * 100;
     }
 
     if (type === "hourlyRate") {
-      const income = v.monthlyIncome;
-      const expenses = v.expenses;
-      const hours = v.billableHours;
+      const income = v.monthlyIncome || 0;
+      const expenses = v.expenses || 0;
+      const hours = v.billableHours || 1;
 
       if (hours <= 0) {
         setResult(0);
@@ -95,9 +121,9 @@ export default function Calculator({ title, fields, type }: Props) {
       res = (income + expenses) / hours;
     }
 
-    // =========================
+    // ======================
     // HOOK GENERATOR
-    // =========================
+    // ======================
 
     if (type === "hookGenerator") {
       const product = values.product || "your product";
@@ -118,9 +144,9 @@ export default function Calculator({ title, fields, type }: Props) {
       return;
     }
 
-    // =========================
-    // NAME GENERATOR (UPGRADED)
-    // =========================
+    // ======================
+    // NAME GENERATOR
+    // ======================
 
     if (type === "nameGenerator") {
       const keyword = values.keyword || "idea";
@@ -133,7 +159,6 @@ export default function Calculator({ title, fields, type }: Props) {
         tech: ["Tech", "AI", "Cyber", "Data", "Logic", "Byte", "Quantum", "Nano", "Neuro", "Code"],
         minimal: ["Simple", "Pure", "Clear", "Core", "Mono", "Zen", "Flat", "Light", "Soft", "True"],
       };
-      
 
       const suffixes: Record<string, string[]> = {
         modern: ["Hub", "Lab", "Works", "Flow", "Space", "Studio", "Base", "Zone", "Stack", "Forge"],
@@ -157,86 +182,96 @@ export default function Calculator({ title, fields, type }: Props) {
 
       const output = formats[Math.floor(Math.random() * formats.length)]();
 
+
       setResult(output);
       pushToHistory(output);
       return;
     }
 
+    // ======================
+    // SLOGAN GENERATOR
+    // ======================
+
     if (type === "sloganGenerator") {
       const keyword = values.keyword || "your brand";
 
       const slogans = [
-        `Smarter growth for ${keyword}.`,
-        `Built for better ${keyword}.`,
-        `Unlock your ${keyword} potential.`,
-        `The future of ${keyword}.`,
-        `Make ${keyword} simpler.`,
-        `Where ${keyword} meets innovation.`,
-        `Elevate your ${keyword} game.`,
-        `Designed for modern ${keyword}.`,
-        `Powering next-gen ${keyword}.`,
-        `Better tools for better ${keyword}.`,
+          `Smarter growth for ${keyword}.`,
+          `Built for better ${keyword}.`,
+          `Unlock your ${keyword} potential.`,
+          `The future of ${keyword}.`,
+          `Make ${keyword} simpler.`,
+          `Where ${keyword} meets innovation.`,
+          `Elevate your ${keyword} game.`,
+          `Designed for modern ${keyword}.`,
+          `Powering next-gen ${keyword}.`,
+          `Better tools for better ${keyword}.`,
 
-        `Reimagine what ${keyword} can be.`,
-        `Take your ${keyword} further.`,
-        `Less effort, more ${keyword}.`,
-        `Upgrade your ${keyword} today.`,
-        `Simple. Fast. Effective ${keyword}.`,
-        `Your journey to better ${keyword} starts here.`,
-        `Built to transform ${keyword}.`,
-        `The smarter way to do ${keyword}.`,
-        `Unlock growth in ${keyword}.`,
-        `Performance meets ${keyword}.`,
+          `Reimagine what ${keyword} can be.`,
+          `Take your ${keyword} further.`,
+          `Less effort, more ${keyword}.`,
+          `Upgrade your ${keyword} today.`,
+          `Simple. Fast. Effective ${keyword}.`,
+          `Your journey to better ${keyword} starts here.`,
+          `Built to transform ${keyword}.`,
+          `The smarter way to do ${keyword}.`,
+          `Unlock growth in ${keyword}.`,
+          `Performance meets ${keyword}.`,
 
-        `Scale your ${keyword} faster.`,
-        `Make every ${keyword} count.`,
-        `Next-level ${keyword} solutions.`,
-        `Your ${keyword}, redefined.`,
-        `Future-ready ${keyword} tools.`,
-        `Create. Improve. Master ${keyword}.`,
-        `Innovation for ${keyword} leaders.`,
-        `Breakthrough ideas for ${keyword}.`,
-        `All-in-one ${keyword} solution.`,
-        `The edge your ${keyword} needs.`,
+          `Scale your ${keyword} faster.`,
+          `Make every ${keyword} count.`,
+          `Next-level ${keyword} solutions.`,
+          `Your ${keyword}, redefined.`,
+          `Future-ready ${keyword} tools.`,
+          `Create. Improve. Master ${keyword}.`,
+          `Innovation for ${keyword} leaders.`,
+          `Breakthrough ideas for ${keyword}.`,
+          `All-in-one ${keyword} solution.`,
+          `The edge your ${keyword} needs.`,
 
-        `Where ideas turn into ${keyword}.`,
-        `Smart solutions for ${keyword} builders.`,
-        `Grow beyond limits in ${keyword}.`,
-        `Simplifying complex ${keyword}.`,
-        `The ultimate ${keyword} upgrade.`,
-        `Transforming the way you do ${keyword}.`,
-        `Effortless excellence in ${keyword}.`,
-        `Built for creators of ${keyword}.`,
-        `From idea to impact in ${keyword}.`,
-        `Accelerate your ${keyword} journey.`,
+          `Where ideas turn into ${keyword}.`,
+          `Smart solutions for ${keyword} builders.`,
+          `Grow beyond limits in ${keyword}.`,
+          `Simplifying complex ${keyword}.`,
+          `The ultimate ${keyword} upgrade.`,
+          `Transforming the way you do ${keyword}.`,
+          `Effortless excellence in ${keyword}.`,
+          `Built for creators of ${keyword}.`,
+          `From idea to impact in ${keyword}.`,
+          `Accelerate your ${keyword} journey.`,
 
-        `The modern standard for ${keyword}.`,
-        `Turn your ${keyword} into success.`,
-        `Optimize every part of your ${keyword}.`,
-        `Stronger ${keyword} starts here.`,
-        `Fuel your ${keyword} growth.`,
-        `Make ${keyword} work smarter.`,
-        `Next-gen thinking for ${keyword}.`,
-        `Your shortcut to better ${keyword}.`,
-        `Revolutionize your ${keyword} workflow.`,
-        `Built for results in ${keyword}.`,
+          `The modern standard for ${keyword}.`,
+          `Turn your ${keyword} into success.`,
+          `Optimize every part of your ${keyword}.`,
+          `Stronger ${keyword} starts here.`,
+          `Fuel your ${keyword} growth.`,
+          `Make ${keyword} work smarter.`,
+          `Next-gen thinking for ${keyword}.`,
+          `Your shortcut to better ${keyword}.`,
+          `Revolutionize your ${keyword} workflow.`,
+          `Built for results in ${keyword}.`,
 
-        `The power behind great ${keyword}.`,
-        `Everything your ${keyword} needs.`,
-        `Create impact with ${keyword}.`,
-        `Grow smarter, not harder in ${keyword}.`,
-        `Turn potential into ${keyword}.`,
-        `The future belongs to ${keyword}.`,
-        `Engineered for peak ${keyword}.`,
-        `Your ${keyword} advantage.`,
+          `The power behind great ${keyword}.`,
+          `Everything your ${keyword} needs.`,
+          `Create impact with ${keyword}.`,
+          `Grow smarter, not harder in ${keyword}.`,
+          `Turn potential into ${keyword}.`,
+          `The future belongs to ${keyword}.`,
+          `Engineered for peak ${keyword}.`,
+          `Your ${keyword} advantage.`,
       ];
 
-      const resultSlogan =
+      const output =
         slogans[Math.floor(Math.random() * slogans.length)];
 
-      setResult(resultSlogan);
+      setResult(output);
+      pushToHistory(output);
       return;
     }
+
+    // ======================
+    // CTA GENERATOR
+    // ======================
 
     if (type === "ctaGenerator") {
       const keyword = values.keyword || "your product";
@@ -300,10 +335,11 @@ export default function Calculator({ title, fields, type }: Props) {
         `Start transforming your ${keyword}.`,
       ];
 
-      const resultCTA =
+      const output =
         ctas[Math.floor(Math.random() * ctas.length)];
 
-      setResult(resultCTA);
+      setResult(output);
+      pushToHistory(output);
       return;
     }
 
@@ -315,31 +351,36 @@ export default function Calculator({ title, fields, type }: Props) {
   };
 
   const regenerate = () => {
-    if (type !== "hookGenerator" && type !== "nameGenerator") return;
     calculate();
   };
 
   const copyToClipboard = async () => {
     if (!result) return;
-    await navigator.clipboard.writeText(String(result));
-    alert("Copied to clipboard!");
+
+    try {
+      await navigator.clipboard.writeText(
+        String(result)
+      );
+
+      alert("Copied to clipboard!");
+    } catch {
+      alert("Copy failed.");
+    }
   };
 
   return (
     <div className="w-full">
       <div className="bg-[var(--color-card)] rounded-2xl shadow-lg border border-gray-100 p-8 w-full">
-      
-     
 
-        {/* TITLE */}
-        <h1 className="text-3xl font-bold mb-6 text-center">
+        <h1 className="text-3xl font-bold text-center mb-6 text-[var(--color-text)]">
           {title}
         </h1>
 
-        {/* INPUTS */}
         {fields.map((field) => (
-          <div key={field.name} className="relative mb-6">
-
+          <div
+            key={field.name}
+            className="relative mb-6"
+          >
             <input
               id={field.name}
               type={field.type || "number"}
@@ -347,47 +388,53 @@ export default function Calculator({ title, fields, type }: Props) {
               onChange={(e) =>
                 handleChange(field.name, e.target.value)
               }
-              className="peer w-full border border-gray-200 focus:border-[var(--color-primary)] rounded-lg px-4 pt-6 pb-2 text-lg focus:outline-none focus:ring-2 focus:ring-black"
+              className="peer w-full border border-gray-200 rounded-lg px-4 pt-6 pb-2 text-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
             />
 
             <label
               htmlFor={field.name}
               className="absolute left-4 top-2 text-sm text-gray-500 transition-all
-              peer-placeholder-shown:top-4 peer-placeholder-shown:text-lg
-              peer-focus:top-2 peer-focus:text-sm"
+              peer-placeholder-shown:top-4
+              peer-placeholder-shown:text-lg
+              peer-focus:top-2
+              peer-focus:text-sm"
             >
               {field.placeholder}
             </label>
-
           </div>
         ))}
 
-        {/* BUTTON */}
         <button
           onClick={calculate}
-          className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)]"
+          className="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white py-3 rounded-lg text-lg font-semibold transition"
         >
-          {type === "hookGenerator" || type === "nameGenerator" || type === "sloganGenerator"
+          {type === "hookGenerator" ||
+          type === "nameGenerator" ||
+          type === "sloganGenerator" ||
+          type === "ctaGenerator"
             ? "Generate"
             : "Calculate"}
         </button>
 
-        {/* RESULT */}
         {result !== null && (
           <div className="mt-8 text-center whitespace-pre-line">
 
-            <p className="text-gray-500 mb-2">Result</p>
+            <p className="text-gray-500 mb-2">
+              Result
+            </p>
 
             <div className="text-4xl font-bold text-[var(--color-text)] mb-4">
               {typeof result === "number"
                 ? type === "hourlyRate"
-                  ? `${result.toFixed(2)} hour(s)`
-                  : `${result.toFixed(2)}`
+                  ? `${result.toFixed(2)} / hour`
+                  : result.toFixed(2)
                 : result}
             </div>
 
-            {/* ACTIONS */}
-            {(type === "hookGenerator" || type === "nameGenerator") && (
+            {(type === "hookGenerator" ||
+              type === "nameGenerator" ||
+              type === "sloganGenerator" ||
+              type === "ctaGenerator") && (
               <div className="flex gap-3 justify-center mb-6">
 
                 <button
@@ -407,28 +454,26 @@ export default function Calculator({ title, fields, type }: Props) {
               </div>
             )}
 
-            {/* HISTORY */}
-            {(type === "hookGenerator" || type === "nameGenerator") &&
-              history.length > 0 && (
-                <div className="text-left mt-6 border-t pt-4">
+            {history.length > 0 && (
+              <div className="text-left mt-6 border-t pt-4">
 
-                  <p className="text-sm text-gray-500 mb-2">
-                    History
-                  </p>
+                <p className="text-sm text-gray-500 mb-2">
+                  History
+                </p>
 
-                  <ul className="space-y-2 text-sm">
-                    {history.map((item, index) => (
-                      <li
-                        key={index}
-                        className="bg-gray-100 p-2 rounded"
-                      >
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
+                <ul className="space-y-2 text-sm">
+                  {history.map((item, index) => (
+                    <li
+                      key={index}
+                      className="bg-gray-100 p-2 rounded"
+                    >
+                      {item}
+                    </li>
+                  ))}
+                </ul>
 
-                </div>
-              )}
+              </div>
+            )}
 
           </div>
         )}
