@@ -25,7 +25,7 @@ export default function ToolLinks() {
           <Link
             key={l.href}
             href={l.href}
-            className="text-sm bg-gray-200 px-3 py-1 rounded-full hover:bg-gray-300"
+            className="text-sm bg-slate-100 text-slate-700 px-3 py-1 rounded-full hover:bg-[var(--color-primary)] hover:text-white transition"
           >
             {l.label}
           </Link>

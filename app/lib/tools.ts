@@ -15,7 +15,7 @@ export const tools = {
   "profit-margin-calculator": {
     title: "Profit Margin Calculator",
     description:
-      "Calculate your business profit margin instantly.",
+      "Free profit margin calculator for pricing, revenue planning, and business profit analysis.",
     type: "profitMargin",
     fields: [
       {
@@ -32,7 +32,7 @@ export const tools = {
   "startup-cost-calculator": {
     title: "Startup Cost Calculator",
     description:
-      "Estimate startup expenses for your business.",
+      "Free startup cost calculator to estimate launch expenses, funding needs, and business setup costs.",
     type: "startupCost",
     fields: [
       {
@@ -87,7 +87,7 @@ export const tools = {
   "roi-calculator": {
     title: "ROI Calculator",
     description:
-      "Calculate return on investment instantly.",
+      "ROI calculator for measuring return on investment, profit efficiency, and project performance.",
     type: "roi",
     fields: [
       {
@@ -139,7 +139,7 @@ export const tools = {
   "business-name-generator": {
     title: "Business Name Generator",
     description:
-      "Generate creative business name ideas instantly.",
+      "Generate brandable business name ideas for startups, side hustles, and online brands.",
     type: "nameGenerator",
     fields: [
       {

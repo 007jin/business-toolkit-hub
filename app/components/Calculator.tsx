@@ -1,6 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+const currencyData: Record<string, { symbol: string; rateToUSD: number }> = {
+  USD: { symbol: "$", rateToUSD: 1 },
+  EUR: { symbol: "€", rateToUSD: 1.09 },
+  GBP: { symbol: "£", rateToUSD: 1.25 },
+  AUD: { symbol: "A$", rateToUSD: 0.65 },
+  CAD: { symbol: "C$", rateToUSD: 0.74 },
+  JPY: { symbol: "¥", rateToUSD: 0.0067 },
+  CHF: { symbol: "CHF", rateToUSD: 1.09 },
+  PHP: { symbol: "₱", rateToUSD: 0.0178 },
+  THB: { symbol: "฿", rateToUSD: 0.028 },
+  IDR: { symbol: "Rp", rateToUSD: 0.000064 },
+};
+
+const currencyOptions = Object.entries(currencyData).map(
+  ([value, info]) => ({
+    value,
+    label: value,
+    symbol: info.symbol,
+    rateToUSD: info.rateToUSD,
+  })
+);
+
+const majorCurrencyPairs = [
+  "USD/EUR",
+  "USD/GBP",
+  "USD/PHP",
+  "USD/THB",
+  "USD/IDR",
+  "USD/AUD",
+  "USD/CAD",
+  "USD/JPY",
+  "USD/CHF",
+];
 
 export type Field = {
   name: string;
@@ -34,12 +68,102 @@ export default function Calculator({
   const [values, setValues] = useState<Record<string, string>>({});
   const [result, setResult] = useState<number | string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
+  const [inputCurrency, setInputCurrency] = useState("USD");
+  const [targetCurrency, setTargetCurrency] = useState("USD");
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+  const [exchangeRateStatus, setExchangeRateStatus] = useState<"idle" | "loading" | "error">("idle");
+
+  const isProfitMargin = type === "profitMargin";
+  const isBreakEven = type === "breakEven";
+  const isHourlyRate = type === "hourlyRate";
+  const isPricingMarkup = type === "pricingMarkup";
+  const isROI = type === "roi";
+
+  const guidanceMessage: Record<CalculatorType, string | null> = {
+    profitMargin:
+      "Profit margin shows what share of revenue remains after cost, expressed as a percentage.",
+    startupCost:
+      "Startup cost is the total of equipment and marketing expenses needed to launch your business.",
+    breakEven:
+      "Price per unit must be greater than variable cost per unit to reach break-even.",
+    pricingMarkup:
+      "Markup shows how much above cost you’re selling your product, expressed as a percentage.",
+    roi:
+      "ROI compares profit to investment and is displayed as a percentage.",
+    hourlyRate:
+      "Hourly rate uses income plus expenses divided by billable hours, then converts to your selected currency.",
+    hookGenerator: null,
+    nameGenerator: null,
+    sloganGenerator: null,
+    ctaGenerator: null,
+  };
+
+  const selectedTargetCurrencyInfo =
+    currencyData[targetCurrency] ?? currencyData.USD;
+  const selectedTargetSymbol = selectedTargetCurrencyInfo.symbol;
+  const selectedInputCurrencyInfo =
+    currencyData[inputCurrency] ?? currencyData.USD;
+  const selectedInputSymbol = selectedInputCurrencyInfo.symbol;
+  const staticConversionRate =
+    selectedInputCurrencyInfo.rateToUSD / selectedTargetCurrencyInfo.rateToUSD;
+  const effectiveConversionRate =
+    exchangeRate ?? staticConversionRate;
+  const conversionLabel = `1 ${inputCurrency} = ${effectiveConversionRate.toFixed(6)} ${targetCurrency}`;
+  const conversionNote =
+    isHourlyRate && inputCurrency !== targetCurrency
+      ? exchangeRateStatus === "loading"
+        ? "Fetching live exchange rate..."
+        : exchangeRateStatus === "error"
+        ? "Live rate unavailable, using static fallback estimates."
+        : "Live market exchange rate applied."
+      : null;
 
   const handleChange = (name: string, value: string) => {
     setValues((prev) => ({
       ...prev,
       [name]: value,
     }));
+  };
+
+  const fetchLiveExchangeRate = async (from: string, to: string) => {
+    if (from === to) {
+      setExchangeRate(1);
+      setExchangeRateStatus("idle");
+      return;
+    }
+
+    setExchangeRateStatus("loading");
+
+    try {
+      const response = await fetch(
+        `https://api.exchangerate.host/latest?base=${from}&symbols=${to}`
+      );
+      const data = await response.json();
+
+      if (!data || !data.rates || typeof data.rates[to] !== "number") {
+        throw new Error("Invalid exchange rate response");
+      }
+
+      setExchangeRate(data.rates[to]);
+      setExchangeRateStatus("idle");
+    } catch (error) {
+      console.error("Exchange rate fetch failed:", error);
+      setExchangeRate(null);
+      setExchangeRateStatus("error");
+    }
+  };
+
+  useEffect(() => {
+    if (!isHourlyRate) {
+      return;
+    }
+
+    fetchLiveExchangeRate(inputCurrency, targetCurrency);
+  }, [inputCurrency, targetCurrency, isHourlyRate]);
+
+  const parseNumber = (value: string) => {
+    const cleaned = String(value).trim().replace(/,/g, "");
+    return Number(cleaned);
   };
 
   const pushToHistory = (value: string) => {
@@ -51,9 +175,13 @@ export default function Calculator({
 
   const calculate = () => {
     const v: Record<string, number> = {};
+    const isProfitMargin = type === "profitMargin";
+    const isHourlyRate = type === "hourlyRate";
+    const isPricingMarkup = type === "pricingMarkup";
+    const isROI = type === "roi";
 
     for (const key in values) {
-      const num = Number(values[key]);
+      const num = parseNumber(values[key]);
       v[key] = isNaN(num) ? 0 : num;
     }
 
@@ -64,26 +192,19 @@ export default function Calculator({
     // ======================
 
     if (type === "profitMargin") {
-      // 1. Force numeric values
-      const revenue = Number(v.revenue);
-      const cost = Number(v.cost);
+      const revenue = v.revenue ?? 0;
+      const cost = v.cost ?? 0;
 
-      // 2. Basic validation
       if (!Number.isFinite(revenue) || !Number.isFinite(cost) || revenue <= 0) {
-        setResult("0");
+        setResult(0); // number, not string
         return;
-      }
+      }   
 
-      // 3. Compute margin in percent
-      const profit = revenue - cost;
-      const marginPercent = (profit / revenue) * 100;
+    const profit = revenue - cost;
+    const marginPercent = (profit / revenue) * 100;
 
-      // 4. Format with percent sign
-      setResult(marginPercent);
-    }
-
-    if (type === "startupCost") {
-      res = v.equipment + v.marketing;
+    setResult(marginPercent); // e.g. 20 for 20%
+    return;
     }
 
     if (type === "breakEven") {
@@ -95,7 +216,13 @@ export default function Calculator({
         return;
       }
 
-      res = v.fixedCost / contribution;
+      res = Math.ceil(v.fixedCost / contribution);
+    }
+
+    if (type === "startupCost") {
+      const equipment = v.equipment || 0;
+      const marketing = v.marketing || 0;
+      res = equipment + marketing;
     }
 
     if (type === "pricingMarkup") {
@@ -127,7 +254,8 @@ export default function Calculator({
         return;
       }
 
-      res = (income + expenses) / hours;
+      const rawRate = (income + expenses) / hours;
+      res = rawRate * effectiveConversionRate;
     }
 
     // ======================
@@ -355,7 +483,21 @@ export default function Calculator({
     setResult(res);
 
     if (typeof res === "number") {
-      pushToHistory(res.toFixed(2));
+      const formattedNumber = res.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+
+      const formattedResult =
+        isProfitMargin || isPricingMarkup || isROI
+          ? `${formattedNumber}%`
+          : isBreakEven
+          ? `${formattedNumber} units`
+          : isHourlyRate
+          ? `${selectedTargetSymbol}${formattedNumber} ${targetCurrency} / hour`
+          : formattedNumber;
+
+      pushToHistory(formattedResult);
     }
   };
 
@@ -364,11 +506,11 @@ export default function Calculator({
   };
 
   const copyToClipboard = async () => {
-    if (!result) return;
+    if (!result && displayResult === null) return;
 
     try {
       await navigator.clipboard.writeText(
-        String(result)
+        displayResult ?? String(result)
       );
 
       alert("Copied to clipboard!");
@@ -377,9 +519,37 @@ export default function Calculator({
     }
   };
 
+  let displayResult: string | null = null;
+
+  if (result === null) {
+    displayResult = null;
+  } else if (typeof result === "string") {
+    displayResult = result;
+  } else if (isProfitMargin || isPricingMarkup || isROI) {
+    displayResult = `${result.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}%`;
+  } else if (isBreakEven) {
+    displayResult = `${result.toLocaleString(undefined, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    })} units`;
+  } else if (isHourlyRate) {
+    displayResult = `${selectedTargetSymbol}${result.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })} ${targetCurrency} / hour`;
+  } else {
+    displayResult = result.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+
   return (
     <div className="w-full">
-      <div className="bg-[var(--color-card)] rounded-2xl shadow-lg border border-gray-100 p-8 w-full">
+      <div className="bg-white rounded-[2rem] shadow-[0_30px_70px_-40px_rgba(37,99,235,0.35)] border border-slate-200 p-8 w-full">
 
         <h1 className="text-3xl font-bold text-center mb-6 text-[var(--color-text)]">
           {title}
@@ -397,12 +567,12 @@ export default function Calculator({
               onChange={(e) =>
                 handleChange(field.name, e.target.value)
               }
-              className="peer w-full border border-gray-200 rounded-lg px-4 pt-6 pb-2 text-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+              className="peer w-full border border-slate-200 rounded-xl px-4 pt-6 pb-2 text-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
             />
 
             <label
               htmlFor={field.name}
-              className="absolute left-4 top-2 text-sm text-gray-500 transition-all
+              className="absolute left-4 top-2 text-sm text-slate-500 transition-all
               peer-placeholder-shown:top-4
               peer-placeholder-shown:text-lg
               peer-focus:top-2
@@ -412,6 +582,77 @@ export default function Calculator({
             </label>
           </div>
         ))}
+
+        {guidanceMessage[type] && (
+          <div
+            className={`mb-6 rounded-2xl p-4 text-sm ${
+              isBreakEven
+                ? "border border-[#10B981]/50 bg-[#D1FAE5] text-[#064E3B]"
+                : "border border-[#10B981]/30 bg-[#ECFDF5] text-[#065F46]"
+            }`}
+          >
+            {guidanceMessage[type]}
+          </div>
+        )}
+
+        {isHourlyRate && (
+          <div className="mb-6 grid gap-4 sm:grid-cols-2">
+            <div>
+              <label
+                htmlFor="inputCurrency"
+                className="block mb-2 text-sm font-medium text-gray-700"
+              >
+                Input currency
+              </label>
+
+              <select
+                id="inputCurrency"
+                value={inputCurrency}
+                onChange={(e) => setInputCurrency(e.target.value)}
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+              >
+                {currencyOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+
+              <p className="text-sm text-gray-500 mt-3">
+                Enter income and expenses in the selected currency.
+              </p>
+            </div>
+
+            <div>
+              <label
+                htmlFor="targetCurrency"
+                className="block mb-2 text-sm font-medium text-gray-700"
+              >
+                Convert to currency
+              </label>
+
+              <select
+                id="targetCurrency"
+                value={targetCurrency}
+                onChange={(e) => setTargetCurrency(e.target.value)}
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+              >
+                {currencyOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+
+              <p className="text-sm text-gray-500 mt-3">
+                Major pairs: {majorCurrencyPairs.join(" · ")}
+              </p>
+              <p className="text-sm text-gray-500 mt-2">
+                * After changing input or target currency, click Calculate again to refresh the converted rate.
+              </p>
+            </div>
+          </div>
+        )}
 
         <button
           onClick={calculate}
@@ -433,12 +674,21 @@ export default function Calculator({
             </p>
 
             <div className="text-4xl font-bold text-[var(--color-text)] mb-4">
-              {typeof result === "number"
-                ? type === "hourlyRate"
-                  ? `${result.toFixed(2)} / hour`
-                  : result.toFixed(2)
-                : result}
+              {displayResult ?? "—"}
             </div>
+
+            {isHourlyRate && (
+              <>
+                <p className="text-sm text-gray-500 mb-4">
+                  {conversionLabel}
+                </p>
+                {conversionNote && (
+                  <p className="text-sm text-slate-500">
+                    {conversionNote}
+                  </p>
+                )}
+              </>
+            )}
 
             {(type === "hookGenerator" ||
               type === "nameGenerator" ||
@@ -448,14 +698,14 @@ export default function Calculator({
 
                 <button
                   onClick={regenerate}
-                  className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:opacity-90"
+                  className="bg-slate-900 text-white px-4 py-2 rounded-xl hover:bg-slate-800 transition"
                 >
                   Regenerate
                 </button>
 
                 <button
                   onClick={copyToClipboard}
-                  className="bg-black text-white px-4 py-2 rounded-lg hover:opacity-90"
+                  className="bg-slate-900 text-white px-4 py-2 rounded-xl hover:bg-slate-800 transition"
                 >
                   Copy
                 </button>

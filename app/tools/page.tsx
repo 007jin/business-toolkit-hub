@@ -4,21 +4,22 @@ import { tools } from "@/app/lib/tools";
 export default function ToolsPage() {
 
   return (
-    <main className="bg-gray-100 min-h-screen py-12 px-4">
+    <main className="bg-[var(--color-bg)] min-h-screen py-12 px-4">
 
       <div className="max-w-6xl mx-auto">
 
         {/* HERO */}
         <section className="text-center mb-12">
 
-          <h1 className="text-5xl font-bold text-[var(--color-text)] mb-4">
-            Business Tools
-          </h1>
+          <div className="mx-auto max-w-4xl overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_40px_120px_-70px_rgba(37,99,235,0.35)] p-14">
+            <h1 className="text-5xl font-bold text-[var(--color-text)] mb-4">
+              Business Tools
+            </h1>
 
-          <p className="text-lg text-[var(--color-subtext)] max-w-2xl mx-auto">
-            Free calculators and generators designed for
-            entrepreneurs, freelancers, startups, and creators.
-          </p>
+            <p className="text-lg text-[var(--color-subtext)] max-w-2xl mx-auto">
+              Free calculators and generators designed for entrepreneurs, freelancers, startups, and creators.
+            </p>
+          </div>
 
         </section>
 
@@ -30,7 +31,7 @@ export default function ToolsPage() {
             <Link
               key={key}
               href={`/tools/${key}`}
-              className="bg-white rounded-2xl shadow hover:shadow-lg transition p-6 border border-gray-100"
+              className="bg-white rounded-[2rem] border border-slate-200 shadow-xl transition-transform p-6 hover:-translate-y-1 hover:shadow-2xl"
             >
 
               <h2 className="text-2xl font-bold text-[var(--color-text)] mb-3">
@@ -43,7 +44,7 @@ export default function ToolsPage() {
 
               <div className="mt-6">
 
-                <span className="inline-block bg-blue-100 text-[var(--color-primary)] px-4 py-2 rounded-full text-sm font-medium">
+                <span className="inline-block bg-[var(--color-primary)]/10 text-[var(--color-primary)] px-4 py-2 rounded-full text-sm font-medium">
                   Open Tool →
                 </span>
 
