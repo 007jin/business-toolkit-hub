@@ -1,5 +1,20 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { tools } from "@/app/lib/tools";
+
+export const metadata: Metadata = {
+  title: "Business Tools | Business Toolkit Hub",
+  description:
+    "Free calculators and generators for entrepreneurs, freelancers, startups, and online businesses.",
+  openGraph: {
+    title: "Business Tools | Business Toolkit Hub",
+    description:
+      "Free calculators and generators for entrepreneurs, freelancers, startups, and online businesses.",
+    url: "https://yourdomain.com/tools",
+    siteName: "Business Toolkit Hub",
+    type: "website",
+  },
+};
 
 export default function ToolsPage() {
 

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Inter } from "next/font/google";
 import type { Metadata } from "next";
 
+export const metadataBase = new URL("https://yourdomain.com");
+
 export const metadata: Metadata = {
   title: "Business Toolkit Hub - Free Online Business Tools",
   description:
@@ -23,6 +25,10 @@ export const metadata: Metadata = {
     url: "https://yourdomain.com",
     siteName: "Business Toolkit Hub",
     type: "website",
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 

@@ -1,0 +1,30 @@
+[
+  {
+    "id": "0795a534-6dd3-414c-a681-799ae0c1c4f2",
+    "email": "a@example.com",
+    "passwordHash": "hash",
+    "status": "pending",
+    "verificationToken": "f6d8788ba7b6519080aeedceb06c7db4b150727b37ffbf21"
+  },
+  {
+    "id": "2aa85369-7d8e-489d-a913-c95fcc9a41f1",
+    "email": "b@example.com",
+    "passwordHash": "h2",
+    "status": "approved",
+    "verificationToken": "801fa348069fcf3171753708a4a3b5c4322152d2009f28d3"
+  },
+  {
+    "id": "de629970-d5e1-47a6-8c98-46d7ea2d9ad5",
+    "email": "a@example.com",
+    "passwordHash": "hash",
+    "status": "pending",
+    "verificationToken": "de03efcb312d2bb12650f16d65c5afa74cd8bf028d9cf978"
+  },
+  {
+    "id": "0c0867dc-24e1-4c41-b5e5-4985d5e9f9ef",
+    "email": "b@example.com",
+    "passwordHash": "h2",
+    "status": "approved",
+    "verificationToken": "08f087741f0d2c5c5fc12196e9a8368cee3873c04a18535c"
+  }
+]

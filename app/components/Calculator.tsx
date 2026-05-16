@@ -68,10 +68,13 @@ export default function Calculator({
   const [values, setValues] = useState<Record<string, string>>({});
   const [result, setResult] = useState<number | string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [copyStatus, setCopyStatus] = useState<string | null>(null);
   const [inputCurrency, setInputCurrency] = useState("USD");
   const [targetCurrency, setTargetCurrency] = useState("USD");
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [exchangeRateStatus, setExchangeRateStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [isCalculating, setIsCalculating] = useState(false);
 
   const isProfitMargin = type === "profitMargin";
   const isBreakEven = type === "breakEven";
@@ -136,7 +139,9 @@ export default function Calculator({
 
     try {
       const response = await fetch(
-        `https://api.exchangerate.host/latest?base=${from}&symbols=${to}`
+        `/api/exchange?base=${encodeURIComponent(from)}&symbols=${encodeURIComponent(
+          to
+        )}`
       );
       const data = await response.json();
 
@@ -174,12 +179,27 @@ export default function Calculator({
   };
 
   const calculate = () => {
-    const v: Record<string, number> = {};
     const isProfitMargin = type === "profitMargin";
     const isHourlyRate = type === "hourlyRate";
     const isPricingMarkup = type === "pricingMarkup";
     const isROI = type === "roi";
 
+    setErrorMessage(null);
+    setCopyStatus(null);
+    setIsCalculating(true);
+
+    const missingField = fields.find(
+      (field) => !values[field.name]?.trim()
+    );
+
+    if (missingField) {
+      setErrorMessage("Please fill in all fields before calculating.");
+      setResult(null);
+      setIsCalculating(false);
+      return;
+    }
+
+    const v: Record<string, number> = {};
     for (const key in values) {
       const num = parseNumber(values[key]);
       v[key] = isNaN(num) ? 0 : num;
@@ -187,105 +207,125 @@ export default function Calculator({
 
     let res: number | string = 0;
 
-    // ======================
-    // CALCULATORS
-    // ======================
-
     if (type === "profitMargin") {
       const revenue = v.revenue ?? 0;
       const cost = v.cost ?? 0;
 
-      if (!Number.isFinite(revenue) || !Number.isFinite(cost) || revenue <= 0) {
-        setResult(0); // number, not string
+      if (revenue <= 0) {
+        setErrorMessage("Revenue must be greater than zero.");
+        setResult(null);
+        setIsCalculating(false);
         return;
-      }   
+      }
 
-    const profit = revenue - cost;
-    const marginPercent = (profit / revenue) * 100;
-
-    setResult(marginPercent); // e.g. 20 for 20%
-    return;
-    }
-
-    if (type === "breakEven") {
-      const contribution =
-        v.pricePerUnit - v.variableCost;
+      const profit = revenue - cost;
+      res = (profit / revenue) * 100;
+    } else if (type === "breakEven") {
+      const contribution = v.pricePerUnit - v.variableCost;
 
       if (contribution <= 0) {
-        setResult(0);
+        setErrorMessage(
+          "Price per unit must be greater than variable cost."
+        );
+        setResult(null);
+        setIsCalculating(false);
         return;
       }
 
       res = Math.ceil(v.fixedCost / contribution);
-    }
-
-    if (type === "startupCost") {
+    } else if (type === "startupCost") {
       const equipment = v.equipment || 0;
       const marketing = v.marketing || 0;
       res = equipment + marketing;
-    }
-
-    if (type === "pricingMarkup") {
+    } else if (type === "pricingMarkup") {
       if (v.cost <= 0) {
-        setResult(0);
+        setErrorMessage("Cost must be greater than zero.");
+        setResult(null);
+        setIsCalculating(false);
         return;
       }
 
-      res =
-        ((v.sellingPrice - v.cost) / v.cost) * 100;
-    }
-
-    if (type === "roi") {
+      res = ((v.sellingPrice - v.cost) / v.cost) * 100;
+    } else if (type === "roi") {
       if (v.investment <= 0) {
-        setResult(0);
+        setErrorMessage("Investment must be greater than zero.");
+        setResult(null);
+        setIsCalculating(false);
         return;
       }
 
       res = (v.profit / v.investment) * 100;
-    }
-
-    if (type === "hourlyRate") {
+    } else if (type === "hourlyRate") {
       const income = v.monthlyIncome || 0;
       const expenses = v.expenses || 0;
       const hours = v.billableHours || 1;
 
       if (hours <= 0) {
-        setResult(0);
+        setErrorMessage("Billable hours must be greater than zero.");
+        setResult(null);
+        setIsCalculating(false);
         return;
       }
 
       const rawRate = (income + expenses) / hours;
       res = rawRate * effectiveConversionRate;
-    }
-
-    // ======================
-    // HOOK GENERATOR
-    // ======================
-
-    if (type === "hookGenerator") {
+    } else if (type === "hookGenerator") {
       const product = values.product || "your product";
-
       const hooks = [
         `This ${product} changed everything.`,
         `Why everyone is switching to ${product}.`,
         `I wish I found ${product} sooner.`,
         `${product} is quietly disrupting the industry.`,
         `The truth about ${product} no one talks about.`,
+        `The easiest way to improve your results with ${product}.`,
+        `Most people are using ${product} the wrong way.`,
+        `How ${product} saves time instantly.`,
+        `The smarter way to grow using ${product}.`,
+        `What makes ${product} different from everything else.`,
+        `The hidden power behind ${product}.`,
+        `Why creators are obsessed with ${product}.`,
+        `The secret weapon businesses use: ${product}.`,
+        `How ${product} helps you work less and earn more.`,
+        `${product} is the shortcut nobody tells you about.`,
+        `The biggest mistake people make with ${product}.`,
+        `How beginners win faster using ${product}.`,
+        `${product} makes hard work feel easy.`,
+        `This simple ${product} strategy actually works.`,
+        `Why ${product} is trending right now.`,
+        `The future belongs to businesses using ${product}.`,
+        `How ${product} gives you an unfair advantage.`,
+        `You’re probably underestimating ${product}.`,
+        `${product} is changing the game.`,
+        `Why smart entrepreneurs use ${product}.`,
+        `The viral potential of ${product} is insane.`,
+        `How ${product} can transform your workflow.`,
+        `People underestimate how powerful ${product} really is.`,
+        `This is why ${product} keeps growing in popularity.`,
+        `${product} could be your biggest competitive edge.`,
+        `How ${product} helps you stand out instantly.`,
+        `Why everyone keeps talking about ${product}.`,
+        `${product} is built for the next generation.`,
+        `The modern business advantage: ${product}.`,
+        `How ${product} simplifies everything.`,
+        `The easiest win you can get with ${product}.`,
+        `${product} is smarter than traditional methods.`,
+        `How top performers use ${product} daily.`,
+        `${product} is the upgrade you’ve been waiting for.`,
+        `The real reason ${product} works so well.`,
+        `How ${product} helps businesses scale faster.`,
+        `This one ${product} trick changes everything.`,
+        `The growth potential behind ${product} is massive.`,
+        `${product} is becoming impossible to ignore.`,
+        `Why ${product} keeps outperforming expectations.`,
+        `How ${product} creates better results with less effort.`,
+        `The breakthrough strategy powered by ${product}.`,
+        `${product} is redefining what’s possible.`,
+        `How ${product} unlocks faster growth.`,
+        `The smartest move you can make today: ${product}.`,
       ];
-
-      const output =
-        hooks[Math.floor(Math.random() * hooks.length)];
-
-      setResult(output);
-      pushToHistory(output);
-      return;
-    }
-
-    // ======================
-    // NAME GENERATOR
-    // ======================
-
-    if (type === "nameGenerator") {
+      
+      res = hooks[Math.floor(Math.random() * hooks.length)];
+    } else if (type === "nameGenerator") {
       const keyword = values.keyword || "idea";
       const tone = (values.tone || "modern").toLowerCase();
 
@@ -307,7 +347,6 @@ export default function Calculator({
 
       const p = prefixes[tone] || prefixes.modern;
       const s = suffixes[tone] || suffixes.modern;
-
       const formats = [
         () => `${keyword}${s[Math.floor(Math.random() * s.length)]}`,
         () => `${p[Math.floor(Math.random() * p.length)]}${keyword}`,
@@ -316,103 +355,72 @@ export default function Calculator({
             s[Math.floor(Math.random() * s.length)]
           }`,
       ];
-
-      const output = formats[Math.floor(Math.random() * formats.length)]();
-
-
-      setResult(output);
-      pushToHistory(output);
-      return;
-    }
-
-    // ======================
-    // SLOGAN GENERATOR
-    // ======================
-
-    if (type === "sloganGenerator") {
+      res = formats[Math.floor(Math.random() * formats.length)]();
+    } else if (type === "sloganGenerator") {
       const keyword = values.keyword || "your brand";
-
       const slogans = [
-          `Smarter growth for ${keyword}.`,
-          `Built for better ${keyword}.`,
-          `Unlock your ${keyword} potential.`,
-          `The future of ${keyword}.`,
-          `Make ${keyword} simpler.`,
-          `Where ${keyword} meets innovation.`,
-          `Elevate your ${keyword} game.`,
-          `Designed for modern ${keyword}.`,
-          `Powering next-gen ${keyword}.`,
-          `Better tools for better ${keyword}.`,
-
-          `Reimagine what ${keyword} can be.`,
-          `Take your ${keyword} further.`,
-          `Less effort, more ${keyword}.`,
-          `Upgrade your ${keyword} today.`,
-          `Simple. Fast. Effective ${keyword}.`,
-          `Your journey to better ${keyword} starts here.`,
-          `Built to transform ${keyword}.`,
-          `The smarter way to do ${keyword}.`,
-          `Unlock growth in ${keyword}.`,
-          `Performance meets ${keyword}.`,
-
-          `Scale your ${keyword} faster.`,
-          `Make every ${keyword} count.`,
-          `Next-level ${keyword} solutions.`,
-          `Your ${keyword}, redefined.`,
-          `Future-ready ${keyword} tools.`,
-          `Create. Improve. Master ${keyword}.`,
-          `Innovation for ${keyword} leaders.`,
-          `Breakthrough ideas for ${keyword}.`,
-          `All-in-one ${keyword} solution.`,
-          `The edge your ${keyword} needs.`,
-
-          `Where ideas turn into ${keyword}.`,
-          `Smart solutions for ${keyword} builders.`,
-          `Grow beyond limits in ${keyword}.`,
-          `Simplifying complex ${keyword}.`,
-          `The ultimate ${keyword} upgrade.`,
-          `Transforming the way you do ${keyword}.`,
-          `Effortless excellence in ${keyword}.`,
-          `Built for creators of ${keyword}.`,
-          `From idea to impact in ${keyword}.`,
-          `Accelerate your ${keyword} journey.`,
-
-          `The modern standard for ${keyword}.`,
-          `Turn your ${keyword} into success.`,
-          `Optimize every part of your ${keyword}.`,
-          `Stronger ${keyword} starts here.`,
-          `Fuel your ${keyword} growth.`,
-          `Make ${keyword} work smarter.`,
-          `Next-gen thinking for ${keyword}.`,
-          `Your shortcut to better ${keyword}.`,
-          `Revolutionize your ${keyword} workflow.`,
-          `Built for results in ${keyword}.`,
-
-          `The power behind great ${keyword}.`,
-          `Everything your ${keyword} needs.`,
-          `Create impact with ${keyword}.`,
-          `Grow smarter, not harder in ${keyword}.`,
-          `Turn potential into ${keyword}.`,
-          `The future belongs to ${keyword}.`,
-          `Engineered for peak ${keyword}.`,
-          `Your ${keyword} advantage.`,
+        `Smarter growth for ${keyword}.`,
+        `Built for better ${keyword}.`,
+        `Unlock your ${keyword} potential.`,
+        `The future of ${keyword}.`,
+        `Make ${keyword} simpler.`,
+        `Where ${keyword} meets innovation.`,
+        `Elevate your ${keyword} game.`,
+        `Designed for modern ${keyword}.`,
+        `Powering next-gen ${keyword}.`,
+        `Better tools for better ${keyword}.`,
+        `Reimagine what ${keyword} can be.`,
+        `Take your ${keyword} further.`,
+        `Less effort, more ${keyword}.`,
+        `Upgrade your ${keyword} today.`,
+        `Simple. Fast. Effective ${keyword}.`,
+        `Your journey to better ${keyword} starts here.`,
+        `Built to transform ${keyword}.`,
+        `The smarter way to do ${keyword}.`,
+        `Unlock growth in ${keyword}.`,
+        `Performance meets ${keyword}.`,
+        `Scale your ${keyword} faster.`,
+        `Make every ${keyword} count.`,
+        `Next-level ${keyword} solutions.`,
+        `Your ${keyword}, redefined.`,
+        `Future-ready ${keyword} tools.`,
+        `Create. Improve. Master ${keyword}.`,
+        `Innovation for ${keyword} leaders.`,
+        `Breakthrough ideas for ${keyword}.`,
+        `All-in-one ${keyword} solution.`,
+        `The edge your ${keyword} needs.`,
+        `Where ideas turn into ${keyword}.`,
+        `Smart solutions for ${keyword} builders.`,
+        `Grow beyond limits in ${keyword}.`,
+        `Simplifying complex ${keyword}.`,
+        `The ultimate ${keyword} upgrade.`,
+        `Transforming the way you do ${keyword}.`,
+        `Effortless excellence in ${keyword}.`,
+        `Built for creators of ${keyword}.`,
+        `From idea to impact in ${keyword}.`,
+        `Accelerate your ${keyword} journey.`,
+        `The modern standard for ${keyword}.`,
+        `Turn your ${keyword} into success.`,
+        `Optimize every part of your ${keyword}.`,
+        `Stronger ${keyword} starts here.`,
+        `Fuel your ${keyword} growth.`,
+        `Make ${keyword} work smarter.`,
+        `Next-gen thinking for ${keyword}.`,
+        `Your shortcut to better ${keyword}.`,
+        `Revolutionize your ${keyword} workflow.`,
+        `Built for results in ${keyword}.`,
+        `The power behind great ${keyword}.`,
+        `Everything your ${keyword} needs.`,
+        `Create impact with ${keyword}.`,
+        `Grow smarter, not harder in ${keyword}.`,
+        `Turn potential into ${keyword}.`,
+        `The future belongs to ${keyword}.`,
+        `Engineered for peak ${keyword}.`,
+        `Your ${keyword} advantage.`,
       ];
-
-      const output =
-        slogans[Math.floor(Math.random() * slogans.length)];
-
-      setResult(output);
-      pushToHistory(output);
-      return;
-    }
-
-    // ======================
-    // CTA GENERATOR
-    // ======================
-
-    if (type === "ctaGenerator") {
+      res = slogans[Math.floor(Math.random() * slogans.length)];
+    } else if (type === "ctaGenerator") {
       const keyword = values.keyword || "your product";
-
       const ctas = [
         `Get started with ${keyword}.`,
         `Try ${keyword} free today.`,
@@ -426,7 +434,6 @@ export default function Calculator({
         `Experience ${keyword} now.`,
         `Take action with ${keyword}.`,
         `Upgrade to ${keyword} instantly.`,
-
         `Get started free with ${keyword}.`,
         `Start using ${keyword} today.`,
         `Discover what ${keyword} can do.`,
@@ -437,7 +444,6 @@ export default function Calculator({
         `Improve your results with ${keyword}.`,
         `Unlock full potential with ${keyword}.`,
         `Get better results using ${keyword}.`,
-
         `Try ${keyword} without risk.`,
         `See how ${keyword} works.`,
         `Start winning with ${keyword}.`,
@@ -448,7 +454,6 @@ export default function Calculator({
         `Start growing with ${keyword}.`,
         `Get more from ${keyword}.`,
         `Use ${keyword} to scale faster.`,
-
         `Don’t wait — start ${keyword} now.`,
         `Join the ${keyword} revolution.`,
         `Get ahead with ${keyword}.`,
@@ -459,7 +464,6 @@ export default function Calculator({
         `Unlock growth with ${keyword}.`,
         `Start your upgrade with ${keyword}.`,
         `Power your success with ${keyword}.`,
-
         `Get serious about ${keyword}.`,
         `Start achieving more with ${keyword}.`,
         `Make progress with ${keyword}.`,
@@ -471,23 +475,17 @@ export default function Calculator({
         `Upgrade your experience with ${keyword}.`,
         `Start transforming your ${keyword}.`,
       ];
-
-      const output =
-        ctas[Math.floor(Math.random() * ctas.length)];
-
-      setResult(output);
-      pushToHistory(output);
-      return;
+      res = ctas[Math.floor(Math.random() * ctas.length)];
     }
 
     setResult(res);
+    setIsCalculating(false);
 
     if (typeof res === "number") {
       const formattedNumber = res.toLocaleString(undefined, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       });
-
       const formattedResult =
         isProfitMargin || isPricingMarkup || isROI
           ? `${formattedNumber}%`
@@ -496,8 +494,9 @@ export default function Calculator({
           : isHourlyRate
           ? `${selectedTargetSymbol}${formattedNumber} ${targetCurrency} / hour`
           : formattedNumber;
-
       pushToHistory(formattedResult);
+    } else if (typeof res === "string") {
+      pushToHistory(res);
     }
   };
 
@@ -506,16 +505,15 @@ export default function Calculator({
   };
 
   const copyToClipboard = async () => {
-    if (!result && displayResult === null) return;
+    if (displayResult === null) return;
 
     try {
-      await navigator.clipboard.writeText(
-        displayResult ?? String(result)
-      );
-
-      alert("Copied to clipboard!");
+      await navigator.clipboard.writeText(displayResult);
+      setCopyStatus("Copied to clipboard!");
+      window.setTimeout(() => setCopyStatus(null), 1600);
     } catch {
-      alert("Copy failed.");
+      setCopyStatus("Unable to copy. Please try again.");
+      window.setTimeout(() => setCopyStatus(null), 3000);
     }
   };
 
@@ -564,6 +562,7 @@ export default function Calculator({
               id={field.name}
               type={field.type || "number"}
               placeholder=" "
+              value={values[field.name] || ""}
               onChange={(e) =>
                 handleChange(field.name, e.target.value)
               }
@@ -592,6 +591,12 @@ export default function Calculator({
             }`}
           >
             {guidanceMessage[type]}
+          </div>
+        )}
+
+        {errorMessage && (
+          <div className="mb-6 rounded-2xl border border-[#F87171]/30 bg-[#FEE2E2] p-4 text-sm text-[#991B1B]">
+            {errorMessage}
           </div>
         )}
 
@@ -656,12 +661,19 @@ export default function Calculator({
 
         <button
           onClick={calculate}
-          className="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white py-3 rounded-lg text-lg font-semibold transition"
+          disabled={isCalculating}
+          className={`w-full py-3 rounded-lg text-lg font-semibold transition ${
+            isCalculating
+              ? "bg-slate-400 text-slate-100 cursor-not-allowed"
+              : "bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white"
+          }`}
         >
-          {type === "hookGenerator" ||
-          type === "nameGenerator" ||
-          type === "sloganGenerator" ||
-          type === "ctaGenerator"
+          {isCalculating
+            ? "Working..."
+            : type === "hookGenerator" ||
+              type === "nameGenerator" ||
+              type === "sloganGenerator" ||
+              type === "ctaGenerator"
             ? "Generate"
             : "Calculate"}
         </button>
@@ -711,6 +723,12 @@ export default function Calculator({
                 </button>
 
               </div>
+            )}
+
+            {copyStatus && (
+              <p className="text-sm text-[var(--color-primary)] mt-2">
+                {copyStatus}
+              </p>
             )}
 
             {history.length > 0 && (
